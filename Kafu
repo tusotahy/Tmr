@@ -1,0 +1,26 @@
+name: Windows RDP (Demo Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Setup ngrok & enable GUI
+        run: |
+          curl -o ngrok.zip https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip
+          tar -xf ngrok.zip
+          .\ngrok authtoken YOUR_NGROK_AUTH_TOKEN
+          Start-Process .\ngrok tcp 3389
+          
+          Enable-ComputerRestore -Drive "C:\"
+          Enable-RemoteDesktop
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+          netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
+          
+      - name: Keep alive
+        run: |
+          for /L %%i in (1,0,2) do ping 127.0.0.1 -n 99999 > nul
